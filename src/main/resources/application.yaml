@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: swiftCrawler
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initialSize: 10
+      minIdle: 10
+      maxActive: 50
+      maxWait: 60000
+    dynamic:
+      primary: master
+      datasource:
+        master:
+          username: root
+          password: root
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://172.16.200.202:3306/fund_system
+        slave:
+          username: root
+          password: root
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://172.16.200.201:3306/fund_system
+  mvc:
+    format:
+      date: yyyy-MM-dd HH:mm:ss
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: UTC
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-enums-package: com.joy.swiftcrawler.model.enums
+
+logging:
+  config: classpath:logback-spring.xml
+
+swift-crawler:
+  folder: /data/swiftCrawler
+  start-page: https://www.swiftcodelist.com/banks.html
+
+crawler:
+  concurrentBankCount: 100 #并发银行数
+  bankConcurrentPageCount: 5 #银行并发列表页数
+  sqlConcurrentCount: 5 #并发sql线程数
+  sqlSleepIntervalMillis: 1000 #sql线程休眠时间
+  sqlBatchSize: 100 #batch insert最大条数
+
+
+

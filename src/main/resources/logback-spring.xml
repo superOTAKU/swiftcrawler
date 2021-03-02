@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <property name="LOGS" value="${user.home}/logs/" />
+
+    <appender name="File" class="ch.qos.logback.core.FileAppender">
+        <File>${LOGS}/swiftCode.log</File>
+        <append>true</append>
+        <prudent>false</prudent>
+
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d %p %C{1.} [%t] %m%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+
+    <!-- LOG everything at INFO level -->
+    <root level="info">
+        <appender-ref ref="File" />
+    </root>
+
+</configuration>
