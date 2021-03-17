@@ -23,10 +23,6 @@ public class SwiftCodeCrawler implements InitializingBean {
 
     private ExecutorService executor;
 
-    private ExecutorCompletionService<String> completionService;
-
-    private int concurrentBankCount;
-
     @Autowired
     private SqlExecutor sqlExecutor;
 
@@ -36,41 +32,16 @@ public class SwiftCodeCrawler implements InitializingBean {
     //开始爬虫
     public void start() throws Exception {
         List<String> allBankUrls = getAllBankUrls();
-        int i = 0;
-        for (; i < concurrentBankCount; i++) {
-            String bankUrl = allBankUrls.get(i);
+        for (var bankUrl : allBankUrls) {
             log.info("bank[{}] start crawl task!", bankUrl);
-            completionService.submit(new BankTask(bankUrl, sqlExecutor, config.getBankConcurrentPageCount()), bankUrl);
+            executor.submit(new BankTask(bankUrl, sqlExecutor, config.getBankConcurrentPageCount()), bankUrl);
         }
-        while (i < allBankUrls.size()) {
-            Future<String> future;
-            try {
-                future = completionService.take();
-                log.info("is future done? [{}]", future.isDone());
-            } catch (InterruptedException e) {
-                log.error("take future interrupted!should not happen!", e);
-                continue;
-            }
-            String completeBankUrl;
-            try {
-                completeBankUrl = future.get();
-                log.info("bank[{}] finish crawl task!", completeBankUrl);
-            } catch (InterruptedException e) {
-                //never happen,cause future is finished!
-            } catch (ExecutionException e) {
-                log.error("bank crawler fail!", e);
-            }
-            String nextBankUrl = allBankUrls.get(i);
-            completionService.submit(new BankTask(nextBankUrl, sqlExecutor, config.getBankConcurrentPageCount()), nextBankUrl);
-            log.info("bank[{}] start crawl task!", nextBankUrl);
-            i++;
-        }
-        log.info("all bank crawl finish! congratulations!");
         executor.shutdown();
         //noinspection ResultOfMethodCallIgnored
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+        log.info("all bank crawl finish! congratulations!");
         sqlExecutor.shutDown();
-        log.info("executor shutdown success! good bye!");
+        log.info("good bye!");
     }
 
     /**
@@ -82,11 +53,10 @@ public class SwiftCodeCrawler implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        concurrentBankCount = config.getConcurrentBankCount();
+        int concurrentBankCount = config.getConcurrentBankCount();
         //10个线程的线程池，不接受多余的任务
         executor = new ThreadPoolExecutor(concurrentBankCount, concurrentBankCount,
                 0L, TimeUnit.MINUTES, new SynchronousQueue<>(),
-                new NamedDaemonThreadFactory("swiftCodeCrawler"), new ThreadPoolExecutor.AbortPolicy());
-        completionService = new ExecutorCompletionService<>(executor);
+                new NamedDaemonThreadFactory("swiftCodeCrawler"), new ThreadPoolExecutor.CallerRunsPolicy());
     }
 }
